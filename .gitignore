@@ -1,2 +1,6 @@
 **/node_modules
 **/scheduler/dist
+.idea
+
+# result.json
+features/result.json
