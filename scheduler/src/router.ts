@@ -15,19 +15,27 @@ export default function buildRouter(agenda: Agenda) {
 
   // GET /
   // Get a job list
-  router.get("/", (_, res) => {
-    agenda.jobs({}, (err?: Error, jobs?: Job[]) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send(err);
-      }
+  router.get("/", (req, res) => {
+    const query: any = {};
+    if (req.query && req.query.processor) {
+      query.name = req.query.processor;
+    }
 
-      if (jobs) {
-        res.json(jobs.map(job => job.attrs));
-      } else {
-        res.json([]);
+    agenda.jobs(
+      query,
+      (err?: Error, jobs?: Job[]) => {
+        if (err) {
+          console.error(err);
+          res.status(500).send(err);
+        }
+
+        if (jobs) {
+          res.json(jobs.map(job => job.attrs));
+        } else {
+          res.json([]);
+        }
       }
-    });
+    );
   });
 
   // POST /
