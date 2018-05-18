@@ -2,8 +2,13 @@ import { Router } from "express";
 import Agenda = require("agenda");
 import bodyParser = require("body-parser");
 
-import { Job } from "agenda";
-import { JobCreation, Processors, processors } from "./jobs";
+import {
+  Job,
+  JobCreation,
+  Processors,
+  processors,
+  getJobOverview
+} from "./jobs";
 import { ObjectId } from "bson";
 
 export default function buildRouter(agenda: Agenda) {
@@ -21,31 +26,30 @@ export default function buildRouter(agenda: Agenda) {
       query.name = req.query.processor;
     }
 
-    agenda.jobs(
-      query,
-      (err?: Error, jobs?: Job[]) => {
-        if (err) {
-          console.error(err);
-          res.status(500).send(err);
-        }
-
-        if (jobs) {
-          res.json(jobs.map(job => job.attrs));
-        } else {
-          res.json([]);
-        }
+    agenda.jobs(query, (err?: Error, jobs?: Job[]) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send(err);
       }
-    );
+
+      if (jobs) {
+        res.json(jobs.map(getJobOverview));
+      } else {
+        res.json([]);
+      }
+    });
   });
 
   // POST /
   // Schedule a job
   router.post("/", (req, res) => {
-    const { processor, when, data } = req.body as JobCreation;
+    console.log("Got an request");
+
+    const { processor, when, options } = req.body as JobCreation;
     let initialData: any = {};
     if (processors[processor]) {
-      res.send("Bear with me. I'll create a job");
-      initialData = processors[processor].getInitialData(data);
+      // res.send("Bear with me. I'll create a job");
+      initialData = processors[processor].getInitialData(options);
     } else {
       res.status(400).json({ error: "Undefined job processor " + processor });
       return;
@@ -59,6 +63,7 @@ export default function buildRouter(agenda: Agenda) {
     } else {
       newJob = agenda.now(processor, initialData);
     }
+    newJob.save();
     res.json({ message: "success", id: newJob.attrs._id });
   });
 
@@ -75,9 +80,13 @@ export default function buildRouter(agenda: Agenda) {
       } else if (jobs && jobs.length) {
         const job = jobs[0];
         const processor = job.attrs.name as Processors;
-        // TODO:: Add default overview data
+
         res.json(
-          Object.assign({}, processors[processor].getAdditionalDetail(job))
+          Object.assign(
+            {},
+            getJobOverview(job),
+            processors[processor].getAdditionalDetail(job)
+          )
         );
       } else {
         res.json();

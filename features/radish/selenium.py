@@ -4,6 +4,8 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 from radish import given, when, then, step, custom_type, register_custom_type, TypeBuilder
 
+from time import sleep
+
 selenium_grid_url = "http://localhost:4444/wd/hub"
 
 
@@ -51,3 +53,7 @@ def naver_enterprise_homepage(step, url):
         find_element_by_css_selector('div.nsite .url')
 
     assert ent_info.text == url
+
+@step('많이 기다리기')
+def wait_1hour(step):
+    sleep(60)

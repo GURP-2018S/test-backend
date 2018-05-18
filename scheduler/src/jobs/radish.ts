@@ -2,14 +2,14 @@ import * as path from "path";
 import * as fs from "fs";
 import { spawn } from "child_process";
 import Agenda = require("agenda");
-import { JobOverview, IJobProcessor } from "./index";
-import { Job } from "agenda";
+import { Job, JobOverview, IJobProcessor } from "./index";
 import assert = require("assert");
 
 export interface JobDetail extends JobOverview, JobAdditionalDetail {}
 
 export interface JobAdditionalDetail {
-  result?: FeatureResult[];
+  result: FeatureResult[];
+  success: boolean;
 }
 
 export interface FeatureResult {
@@ -22,11 +22,20 @@ export interface ScenarioResult {
   success: boolean;
   name: string;
   description: string;
-  detail?: {
-    step: string;
+  steps: StepData[];
+  failureDetail?: {
+    // step: string;
+    /* Position in the list 'steps' of result*/
     index: number;
     reason: string;
   };
+}
+
+export interface StepData {
+  keyword: Cucumber.Keywords;
+  name: string;
+  line: number;
+  duration: number;
 }
 
 type Everything = "*";
@@ -76,9 +85,53 @@ namespace Cucumber {
       status: StepStatus;
       error_message?: string;
     };
-    keyword: "Given" | "When" | "Then";
+    keyword: Keywords;
     line: number;
   }
+
+  export type Keywords = "Given" | "When" | "Then";
+}
+
+const convertFeature = (feature: Cucumber.FeatureResult): FeatureResult => {
+  const scenarioResult = feature.elements.map(convertScenario);
+  return {
+    success: scenarioResult.some(s => s.success),
+    name: feature.name,
+    result: scenarioResult
+  };
+};
+
+const convertScenario = (scenario: Cucumber.ScenarioResult): ScenarioResult => {
+  const failedStepIndex = scenario.steps.findIndex(
+    step => step.result.status === "failed"
+  );
+
+  return {
+    name: scenario.name,
+    description: scenario.description,
+    success: failedStepIndex === -1,
+    steps: scenario.steps.map(convertStep),
+    failureDetail:
+      failedStepIndex !== -1
+        ? {
+            // step: scenario.steps[failedStepIndex].name,
+            index: failedStepIndex,
+            reason: scenario.steps[failedStepIndex].result
+              .error_message as string
+          }
+        : undefined
+  };
+};
+
+const convertStep = (step: Cucumber.StepResult): StepData => ({
+  keyword: step.keyword,
+  name: step.name,
+  line: step.line,
+  duration: step.result.duration
+});
+
+function cucumberJsonToResponse(json: Cucumber.JsonResult) {
+  return json.map(convertFeature);
 }
 
 function getInitialData(options?: IRadishOptions): RadishJobData {
@@ -98,39 +151,9 @@ function getAdditionalDetail(job: Job<RadishJobData>): JobAdditionalDetail {
     "CucumberJSON in the job.attrs.data.result does not exist"
   );
   const json = <Cucumber.FeatureResult[]>job.attrs.data.result;
-  const convertFeature = (feature: Cucumber.FeatureResult): FeatureResult => {
-    const scenarioResult = feature.elements.map(convertScenario);
-    return {
-      success: scenarioResult.some(s => s.success),
-      name: feature.name,
-      result: scenarioResult
-    };
-  };
-
-  const convertScenario = (
-    scenario: Cucumber.ScenarioResult
-  ): ScenarioResult => {
-    const failedStepIndex = scenario.steps.findIndex(
-      step => step.result.status === "failed"
-    );
-
-    return {
-      name: scenario.name,
-      description: scenario.description,
-      success: failedStepIndex === -1,
-      detail: failedStepIndex !== -1
-        ? {
-            step: scenario.steps[failedStepIndex].name,
-            index: failedStepIndex,
-            reason: scenario.steps[failedStepIndex].result
-              .error_message as string
-          }
-        : undefined
-    };
-  };
-
-  const result: FeatureResult[] = json.map(convertFeature);
+  const result = cucumberJsonToResponse(json);
   return {
+    success: result.every(feature => feature.success),
     result
   };
 }
@@ -153,10 +176,19 @@ function defineRadish(agenda: Agenda) {
           console.error(err);
           job.fail(err.message);
           job.save();
+          console.log("Job failed");
         } else {
-          job.attrs.data.result = JSON.parse(data.toString());
-          console.log("job done");
-          done();
+          const json = JSON.parse(data.toString());
+          job.attrs.data.result = json;
+          const result = cucumberJsonToResponse(json);
+          if (result.every(feature => feature.success)) {
+            done();
+            console.log("job succeed");
+          } else {
+            job.fail("Some of the features have failed");
+            job.save();
+            console.log("job failed");
+          }
         }
       };
 
