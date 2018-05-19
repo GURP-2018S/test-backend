@@ -5,27 +5,40 @@ import { MongoClient } from "mongodb";
 
 import buildRouter from "./router";
 
-const DB_NAME = "agenda";
-const COLL_NAME = "agendaJobs";
+const MONGODB_HOST = process.env.MONGODB_HOST || "localhost:27017";
+const DB_NAME = process.env.DB_NAME || "agenda";
+const COLL_NAME = process.env.COLL_NAME || "agendaJobs";
 const agenda = new Agenda();
 
 let client: MongoClient;
 
-(async function load() {
-  try {
-    client = await MongoClient.connect("mongodb://127.0.0.1:27017");
-    const db = client.db(DB_NAME);
+export interface ServerSettings {
+  mongoURL: string;
+  database: string;
+  collection: string;
+}
 
-    agenda.mongo(db, COLL_NAME).name("Radish-BDD Queue");
+export async function load(settings: ServerSettings) {
+  try {
+    client = await MongoClient.connect(settings.mongoURL);
+    const db = client.db(settings.database);
+
+    agenda.mongo(db, settings.collection).name("Radish-BDD Queue");
 
     const app: Application = express();
     const port: number = Number(process.env.PORT) || 3000;
-    app.use("/jobs", buildRouter(agenda, db, COLL_NAME));
+    app.use("/jobs", buildRouter(agenda, db, settings.collection));
     app.listen(port);
   } catch (e) {
     console.error(e);
   }
-})();
+}
+
+load({
+  mongoURL: "mongodb://" + MONGODB_HOST,
+  database: DB_NAME,
+  collection: COLL_NAME
+});
 
 agenda.on("ready", () => {
   agenda.start();

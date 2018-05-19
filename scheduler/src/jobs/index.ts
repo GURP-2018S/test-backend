@@ -54,7 +54,9 @@ export interface JobCreation<T extends any = any> {
   options?: T;
 }
 
-export interface JobQueryResult<T extends JobAttributesExtension = JobAttributesExtension> {
+export interface JobQueryResult<
+  T extends JobAttributesExtension = JobAttributesExtension
+> {
   job: JobAttributes<T>;
   _id: ObjectId;
   running: boolean;
@@ -104,7 +106,7 @@ export function getJobsQuery(): any[] {
           ]
         },
         finished: {
-          $and: ["$lastFinishedAt",  { $gt: ["$lastFinishedAt", "$lastRunAt"] }]
+          $and: ["$lastFinishedAt", { $gt: ["$lastFinishedAt", "$lastRunAt"] }]
         }
       }
     }
@@ -134,14 +136,14 @@ export function getJobOverview(queryResult: JobQueryResult): JobOverview {
 
   let state: JobState | undefined;
   if (running) {
-    state = 'running'
+    state = "running";
   } else if (queued && scheduled) {
-    state = 'pending'
+    state = "pending";
   } else if (finished) {
-    state = 'finished'
+    state = "finished";
   } else {
-    console.error('Undefined job state');
-    state = 'running'
+    console.error("Undefined job state");
+    state = "running";
   }
 
   return {

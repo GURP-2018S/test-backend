@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { JobOverview, JobId, JobCreation } from "../../src/jobs";
+import { JobOverview, JobCreation } from "../../src/jobs";
 import { JobDetail, IRadishOptions } from "../../src/jobs/radish";
 // 나중에 테스트 프레임워크로 환경변수 설정하면 이쁘게 될 듯?
 // 지금은 그냥 할래 :))
