@@ -2,8 +2,12 @@ import * as path from "path";
 import * as fs from "fs";
 import { spawn } from "child_process";
 import Agenda = require("agenda");
-import { Job, JobOverview, IJobProcessor } from "./index";
-import assert = require("assert");
+import {
+  JobQueryResult,
+  JobOverview,
+  IJobProcessor,
+  JobAttributesExtension
+} from "./index";
 
 export interface JobDetail extends JobOverview, JobAdditionalDetail {}
 
@@ -44,6 +48,7 @@ export interface IRadishOptions {
   feature: Everything | string;
 }
 
+/* Additional job data to run radish */
 interface RadishJobData {
   dir: string;
   filename: string;
@@ -145,12 +150,14 @@ function getInitialData(options?: IRadishOptions): RadishJobData {
   };
 }
 
-function getAdditionalDetail(job: Job<RadishJobData>): JobAdditionalDetail {
-  assert(
-    job.attrs.data.result,
-    "CucumberJSON in the job.attrs.data.result does not exist"
-  );
-  const json = <Cucumber.FeatureResult[]>job.attrs.data.result;
+function getAdditionalDetail(
+  queryResult: JobQueryResult<RadishJobData & JobAttributesExtension>
+): JobAdditionalDetail {
+  if (!queryResult.job.data.result) {
+    return { result: [], success: true };
+  }
+
+  const json = <Cucumber.FeatureResult[]>queryResult.job.data.result;
   const result = cucumberJsonToResponse(json);
   return {
     success: result.every(feature => feature.success),
@@ -175,21 +182,19 @@ function defineRadish(agenda: Agenda) {
         if (err) {
           console.error(err);
           job.fail(err.message);
-          job.save();
           console.log("Job failed");
         } else {
           const json = JSON.parse(data.toString());
           job.attrs.data.result = json;
           const result = cucumberJsonToResponse(json);
           if (result.every(feature => feature.success)) {
-            done();
             console.log("job succeed");
           } else {
             job.fail("Some of the features have failed");
-            job.save();
             console.log("job failed");
           }
         }
+        done();
       };
 
       const outputSTDOut = (buffer: Buffer) => {

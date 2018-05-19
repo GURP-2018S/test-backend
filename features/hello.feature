@@ -6,4 +6,4 @@ Feature: My first feature file using radish
     Scenario: Test my calculator
         Given 숫자 5 랑 6
         When 더하기
-        Then 그럼 결과는 10
+        Then 그럼 결과는 11

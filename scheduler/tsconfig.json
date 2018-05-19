@@ -3,8 +3,8 @@
     "target": "es6",
     "lib": ["ES2017.object", "es6", "es2015.symbol", "es2015.iterable"],
     "module": "commonjs",
-    "sourceMap": true,                     
-    "outDir": "./dist",                    
+    "sourceMap": true,
+    "outDir": "./dist",
     "removeComments": true,                
 
     "strict": true,                        
@@ -28,5 +28,9 @@
   },
   "include": [
     "src/**/*"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
   ]
 }

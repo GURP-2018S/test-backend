@@ -7,11 +7,21 @@ import {
   JobCreation,
   Processors,
   processors,
-  getJobOverview
+  getJobOverview,
+  getJobsQuery,
+  ordinarySortQuery
 } from "./jobs";
 import { ObjectId } from "bson";
+import { Db } from "mongodb";
 
-export default function buildRouter(agenda: Agenda) {
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+export default function buildRouter(
+  agenda: Agenda,
+  db: Db,
+  collection: string
+) {
   Object.entries(processors).map(([_, p]) => p.define(agenda));
 
   const router = Router();
@@ -20,24 +30,31 @@ export default function buildRouter(agenda: Agenda) {
 
   // GET /
   // Get a job list
-  router.get("/", (req, res) => {
+  router.get("/", async (req, res) => {
     const query: any = {};
-    if (req.query && req.query.processor) {
-      query.name = req.query.processor;
-    }
 
-    agenda.jobs(query, (err?: Error, jobs?: Job[]) => {
+    try {
+      if (req.query && req.query.processor) {
+        query.name = req.query.processor;
+      }
+
+      // Customized job query
+      const jobData = await db
+        .collection(collection)
+        .aggregate([ordinarySortQuery].concat(getJobsQuery()))
+        .toArray();
+
+      if (jobData) {
+        res.json(jobData.map(getJobOverview));
+      } else {
+        res.json([]);
+      }
+    } catch (err) {
       if (err) {
         console.error(err);
         res.status(500).send(err);
       }
-
-      if (jobs) {
-        res.json(jobs.map(getJobOverview));
-      } else {
-        res.json([]);
-      }
-    });
+    }
   });
 
   // POST /
@@ -64,7 +81,14 @@ export default function buildRouter(agenda: Agenda) {
       newJob = agenda.now(processor, initialData);
     }
     newJob.save();
-    res.json({ message: "success", id: newJob.attrs._id });
+
+    async function waitUntilGetId() {
+      while (!newJob.attrs._id) {
+        await sleep(10);
+      }
+      res.json({ message: "success", id: newJob.attrs._id });
+    }
+    waitUntilGetId();
   });
 
   router.get("/purge", (_, res) => {
@@ -72,27 +96,39 @@ export default function buildRouter(agenda: Agenda) {
     res.send("Purge");
   });
 
-  router.get("/:id", (req, res) => {
-    function sendJobDetail(err?: Error, jobs?: Job[]) {
-      if (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
-      } else if (jobs && jobs.length) {
-        const job = jobs[0];
-        const processor = job.attrs.name as Processors;
+  router.get("/:id", async (req, res) => {
+    try {
+      const jobs = await db
+        .collection(collection)
+        .aggregate(
+          [
+            {
+              $match: {
+                _id: new ObjectId(req.params.id)
+              }
+            },
+            ordinarySortQuery
+          ].concat(getJobsQuery())
+        )
+        .toArray();
 
+      if (jobs && jobs.length > 0) {
+        const queryResult = jobs[0];
+        const processor = queryResult.job.name as Processors;
         res.json(
           Object.assign(
             {},
-            getJobOverview(job),
-            processors[processor].getAdditionalDetail(job)
+            getJobOverview(queryResult),
+            processors[processor].getAdditionalDetail(queryResult)
           )
         );
       } else {
-        res.json();
+        res.status(404).json();
       }
+    } catch (e) {
+      console.error(e);
+      res.status(500).end();
     }
-    agenda.jobs({ _id: new ObjectId(req.params.id) }, sendJobDetail);
   });
 
   router.put("/:id");
