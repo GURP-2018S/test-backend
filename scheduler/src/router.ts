@@ -80,7 +80,7 @@ export default function buildRouter(
     } else {
       newJob = agenda.now(processor, initialData);
     }
-    newJob.save();
+    // newJob.save();
 
     async function waitUntilGetId() {
       while (!newJob.attrs._id) {
