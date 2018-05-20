@@ -1,6 +1,7 @@
 import { Router } from "express";
 import Agenda = require("agenda");
 import bodyParser = require("body-parser");
+import cors = require("cors");
 
 import {
   Job,
@@ -26,6 +27,7 @@ export default function buildRouter(
 
   const router = Router();
 
+  router.use(cors());
   router.use(bodyParser.json());
 
   // GET /
