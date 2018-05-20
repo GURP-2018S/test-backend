@@ -35,6 +35,7 @@ services:
       - "3000:3000"
     volumes:
       - ".:/workspace"
+      - /workspace/scheduler/node_modules
     environment:
       - SELENIUM_URI=http://docker.for.mac.localhost:4444/wd/hub
       - MONGODB_HOST=mongo:27017
