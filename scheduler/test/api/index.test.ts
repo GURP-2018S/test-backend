@@ -31,7 +31,7 @@ async function addJob(scheduleData: JobCreation<IRadishOptions>) {
 
 /* 작업이 실제로 추가되었는지 확인한다.
  * 추가하기 전 최근 작업의 id와, 추가한 후에 최근 작업의 id를 비교한다.
- * 기본적으로 최근에 추가된 순으로 나오는 것을 가정한다. */
+ * 별도의 옵션이 없으면 기본적으로 나중에 예약된 스케쥴 순서로 리턴한다. */
 async function addJobTest() {
   expect.assertions(5);
 

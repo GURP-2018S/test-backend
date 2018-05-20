@@ -5,6 +5,9 @@ import { MongoClient } from "mongodb";
 
 import buildRouter from "./router";
 
+const MONGODB_CONN_SCHEME = process.env.MONGODB_CONN_SCHEME || "mongodb";
+const MONGODB_USER = process.env.MONGODB_USER || "";
+const MONGODB_PASSWD = process.env.MONGODB_PASSWD || "";
 const MONGODB_HOST = process.env.MONGODB_HOST || "localhost:27017";
 const DB_NAME = process.env.DB_NAME || "agenda";
 const COLL_NAME = process.env.COLL_NAME || "agendaJobs";
@@ -33,9 +36,18 @@ export async function load(settings: ServerSettings) {
     console.error(e);
   }
 }
+const authUrl =
+  MONGODB_USER === ""
+    ? ""
+    : `${encodeURIComponent(MONGODB_USER)}:${encodeURIComponent(
+        MONGODB_PASSWD
+      )}@`;
+
+const mongoURL = `${MONGODB_CONN_SCHEME}://${authUrl}${MONGODB_HOST}`;
+console.log("Connecting to %s", mongoURL);
 
 load({
-  mongoURL: "mongodb://" + MONGODB_HOST,
+  mongoURL,
   database: DB_NAME,
   collection: COLL_NAME
 });
