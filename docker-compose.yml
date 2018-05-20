@@ -1,0 +1,42 @@
+version: '2'
+
+services:
+  #TODO
+  # radish:
+  #   build: ./features
+  #   image: seanahn/gurp-radish
+  #   volumes:
+  #     - "./features:/workspace"
+  #   environment:
+  #     - SELENIUM_URI=http://docker.for.mac.localhost:4444/wd/hub
+  #   tty:
+  #     true
+
+  selenium:
+    image: selenium/standalone-chrome
+    volumes:
+      - "/dev/shm:/dev/shm"
+    ports:
+      - "4444:4444"
+
+  mongo:
+    image: mongo:latest
+    #TODO: non-volatile container
+    # volumes:
+    #   - ""
+    ports:
+      - "27017:27017"
+
+  scheduler:
+    build: ./scheduler
+    image: seanahn/gurp-scheduler
+    command: yarn start --host 0.0.0.0
+    ports:
+      - "3000:3000"
+    volumes:
+      - ".:/workspace"
+    environment:
+      - SELENIUM_URI=http://docker.for.mac.localhost:4444/wd/hub
+      - MONGODB_HOST=mongo:27017
+    depends_on:
+      - mongo

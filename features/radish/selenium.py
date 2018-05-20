@@ -5,8 +5,9 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from radish import given, when, then, step, custom_type, register_custom_type, TypeBuilder
 
 from time import sleep
+from os import environ
 
-selenium_grid_url = "http://localhost:4444/wd/hub"
+selenium_grid_url = environ["SELENIUM_URI"]
 
 
 @custom_type('URL',
