@@ -1,0 +1,3 @@
+[submodule "scheduler/packages/selenium-ide"]
+	path = scheduler/packages/selenium-ide
+	url = https://github.com/GURP-2018S/selenium-ide.git

@@ -26,11 +26,16 @@
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
     "express": "^4.16.3",
-    "mongodb": "^3.1.0-beta4"
+    "mongodb": "^3.1.0-beta4",
+    "selenium-webdriver": "3.6.0"
   },
   "scripts": {
     "start": "npm run build:live",
     "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./src/index.ts",
     "test": "npx jest"
+  },
+  "peerDependencies": {
+    "js-beautify": "^1.7.5",
+    "js-string-escape": "^1.0.1"
   }
 }

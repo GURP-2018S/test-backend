@@ -5,32 +5,27 @@
     "module": "commonjs",
     "sourceMap": true,
     "outDir": "./dist",
-    "removeComments": true,                
+    "removeComments": true,
 
-    "strict": true,                        
-    "noImplicitAny": true,                 
-    "strictNullChecks": true,              
-    "strictFunctionTypes": true,           
-    "strictPropertyInitialization": true,  
-    "noImplicitThis": true,                
-    "alwaysStrict": true,                  
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
 
-    "noUnusedLocals": true,                
-    "noUnusedParameters": true,            
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
 
-    "moduleResolution": "node",            
-    "baseUrl": "./",                       
+    "moduleResolution": "node",
+    "baseUrl": "./",
     "paths": {
-      "*": ["./node_modules/*"]
+      "*": ["./node_modules/*", "./packages/selenium-ide/packages/*"]
     },
-    "experimentalDecorators": true,        
+    "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules"]
 }

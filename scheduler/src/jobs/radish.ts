@@ -67,7 +67,7 @@ namespace Cucumber {
     keyword: "Feature";
     line: number;
     tags: string[];
-    type: "feature";
+    type: "project";
     uri: string;
   }
 

@@ -2,6 +2,8 @@ import { ObjectId } from "bson";
 import Agenda = require("agenda");
 
 import radish from "./radish";
+import selianize from "./selianize";
+
 import { JobAttributes } from "agenda";
 
 export type JobId = ObjectId;
@@ -32,7 +34,7 @@ export interface JobOverview {
   finishedAt?: string;
 }
 
-export type Processors = "radish";
+export type Processors = "radish" | "selianize";
 
 export interface IJobProcessor {
   define(agenda: Agenda): void;
@@ -45,7 +47,8 @@ export interface IJobProcessor {
 }
 
 export const processors: Record<Processors, IJobProcessor> = {
-  radish
+  radish,
+  selianize
 };
 
 export interface JobCreation<T extends any = any> {

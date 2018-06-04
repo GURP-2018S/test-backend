@@ -62,7 +62,7 @@ async function getJobTest() {
   expect.assertions(2);
   const result = await addJob({
     processor: "radish",
-    options: { feature: "fail.feature" }
+    options: { feature: "fail.project" }
   });
   /* Job successfully created */
   expect(result.message).toBe("success");
