@@ -15,6 +15,7 @@
     "jest": "^22.4.4",
     "nodemon": "^1.17.4",
     "prettier": "^1.12.1",
+    "rollup": "^0.59.4",
     "ts-jest": "^22.4.6",
     "ts-loader": "^4.3.1",
     "ts-node": "^6.0.3",
@@ -33,7 +34,8 @@
     "etag": "1.8.1",
     "express": "^4.16.3",
     "mongodb": "^3.1.0-beta4",
-    "selenium-webdriver": "3.6"
+    "selenium-webdriver": "3.6",
+    "selianize": "https://github.com/GURP-2018S/selianize.git"
   },
   "scripts": {
     "start": "npm run build:live",
