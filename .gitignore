@@ -6,7 +6,7 @@
 features/result.json
 
 test-environment/__test__/*
-test-environment/side/*
+test-environment/__side__/*
 test-environment/result.json
 
 \.DS_Store

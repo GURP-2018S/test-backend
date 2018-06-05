@@ -5,6 +5,7 @@ import { spawn } from "child_process";
 import { IJobProcessor, JobAttributesExtension, JobQueryResult } from "./index";
 import * as util from "util";
 import Agenda = require("agenda");
+import lodash = require("lodash");
 
 export interface JobAdditionalDetail {
   success: boolean;
@@ -42,14 +43,22 @@ interface ITestJobResult {
   startTime: number;
 
   // Result of Each Test Suite
-  projectResult: any[];
-  testResults: ITestSuiteResult[];
+  projectResults: IProjectResult[];
+}
+
+interface IProjectResult {
+  success: boolean;
+  startTime: number;
+  endTime: number;
+  fileName: string;
+  id: string;
+  suiteResults: ITestSuiteResult[];
 }
 
 interface ITestSuiteResult {
   // Top-level Information
   name: string;
-  status: "passed" | "failed" | "pending";
+  status: "passed" | "failed";
   summary: string;
 
   // WHAT IS THIS?
@@ -68,7 +77,7 @@ interface ITestResult {
   title: string;
   ancestorTitles: string[]; // WHAT IS THIS?
   fullName: string; // WHAT IS THIS?
-  status: "passed" | "failed" | "pending";
+  status: "passed" | "failed";
 
   // WHAT IS THIS?
   failureMessages: string[];
@@ -121,32 +130,97 @@ function defineRadish(agenda: Agenda) {
         });
         child.stderr.on("data", data => console.log(`stderr: ${data}`));
         await new Promise(res => child.on("close", () => res()));
-        const data = await util.promisify(fs.readFile)(
-          path.join(dir, "result.json")
-        );
-        // const json = JSON.parse(data.toString());
 
         // TODO:: Need to convert Jest Output JSON to own output format somehow
-        // const result = cucumberJsonToResponse(json);
+        const rawJson = JSON.parse(
+          (await util.promisify(fs.readFile)(
+            path.join(dir, "result.json")
+          )).toString()
+        );
 
-        job.attrs.data.result = JSON.parse(data.toString());
-        console.log("job succeed");
+        job.attrs.data.result = convertJson(rawJson);
+        console.log("Running job finished");
 
-        // if (result.every(feature => feature.success)) {
-        //   console.log("job succeed");
-        // } else{
-        //   job.fail("Some of the features have failed");
-        //   console.log("job failed");
-        // }
         done();
       } catch (err) {
         console.error(err);
         job.fail(err.message);
         done();
-        console.log("Job failed");
+        console.log("Running job failed");
       }
     }
   );
+}
+
+function convertJson(raw: any): ITestJobResult {
+  const {
+    numTotalTestSuites,
+    numTotalTests,
+    numFailedTestSuites,
+    numFailedTests,
+    numPassedTestSuites,
+    numPassedTests,
+    numPendingTestSuites,
+    numPendingTests,
+    numRuntimeErrorTestSuites,
+    success,
+    wasInterrupted,
+    startTime
+  } = raw;
+
+  const result = {
+    numTotalTestSuites,
+    numTotalTests,
+    numFailedTestSuites,
+    numFailedTests,
+    numPassedTestSuites,
+    numPassedTests,
+    numPendingTestSuites,
+    numPendingTests,
+    numRuntimeErrorTestSuites,
+    success,
+    wasInterrupted,
+    startTime,
+
+    projectResults: [] as IProjectResult[]
+  };
+
+  const projects = Object.entries(
+    lodash.groupBy(raw.testResults, suiteResult => suiteResult.name)
+  ).map(([fileName, suites]) => {
+    return {
+      success: suites.every(suite => suite.status === "passed"),
+      startTime: lodash.minBy(suites, suite => suite.startTime).startTime as number,
+      endTime: lodash.maxBy(suites, suite => suite.endTime).endTime as number,
+      fileName,
+      id: "123",
+      suiteResults: suites.map(prevSuite => {
+        const { status, summary, message, startTime, endTime } = prevSuite;
+
+        return {
+          name: prevSuite.assertionResults[0].ancestorTitles[0],
+          status,
+          summary,
+          message,
+          startTime,
+          endTime,
+          assertionResults: prevSuite.assertionResults.map((test: any) => {
+            return {
+              title: test.title,
+              fullName: test.fullName,
+              ancestorTitles: test.ancestorTitles,
+              status: test.status,
+              failureMessages: test.failureMessages,
+              location: ""
+            };
+          })
+        };
+      })
+    };
+  });
+
+  result.projectResults = projects;
+  return result;
 }
 
 const jobProcessor: IJobProcessor = {

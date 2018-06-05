@@ -26,7 +26,7 @@ export async function load(settings: ServerSettings) {
     client = await MongoClient.connect(settings.mongoURL);
     const db = client.db(settings.database);
 
-    agenda.mongo(db, settings.collection).name("Radish-BDD Queue");
+    agenda.mongo(db, settings.collection).name("BDD Scheduler Queue");
 
     const app: Application = express();
     const port: number = Number(process.env.PORT) || 3000;
