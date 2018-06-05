@@ -1,6 +1,7 @@
 import { Router } from "express";
 import Agenda = require("agenda");
 import bodyParser = require("body-parser");
+import multiparty = require("multiparty");
 import cors = require("cors");
 
 import {
@@ -15,6 +16,8 @@ import {
 import { ObjectId } from "bson";
 import { Db } from "mongodb";
 import { convertSideToJS } from "./libs/selianize";
+import * as util from "util";
+import * as fs from "fs";
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -151,7 +154,35 @@ export function buildConvertRouter() {
   // Convert side to JS
   router.post("/side/js", async (req, res) => {
     try {
-      res.contentType("plain/text").send(await convertSideToJS(req.body));
+      const contentType = req.header("Content-Type");
+      let content;
+      // Multipart
+      if (contentType && contentType.startsWith("multipart")) {
+        const form = new multiparty.Form();
+
+        content = await new Promise<string>((res, rej) => {
+          form.parse(req, async (_, __, files) => {
+            const fileList: any[] = files.file;
+            if (!fileList.length) {
+              rej("No files object provided");
+            }
+            const file = fileList.find(file => file.fieldName === "file");
+            if (file && file.path) {
+              res(
+                JSON.parse(
+                  (await util.promisify(fs.readFile)(file.path)).toString()
+                )
+              );
+            } else {
+              rej("No file has been uploaded");
+            }
+          });
+        });
+      } else {
+        // JSON
+        content = req.body;
+      }
+      res.contentType("plain/text").send(await convertSideToJS(content));
     } catch (e) {
       res.status(500).send(e);
     }

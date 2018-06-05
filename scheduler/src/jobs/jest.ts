@@ -21,7 +21,58 @@ export interface JestOptions {
 interface JestJobData {
   dir: string;
   testName: string;
-  result?: any;
+  result?: ITestJobResult;
+}
+
+interface ITestJobResult {
+  // Number of total tests
+  numTotalTestSuites: number;
+  numTotalTests: number;
+  numFailedTestSuites: number;
+  numFailedTests: number;
+  numPassedTestSuites: number;
+  numPassedTests: number;
+  numPendingTestSuites: number;
+  numPendingTests: number;
+  numRuntimeErrorTestSuites: number;
+
+  // Top-level Information
+  success: boolean;
+  wasInterrupted: boolean;
+  startTime: number;
+
+  // Result of Each Test Suite
+  projectResult: any[];
+  testResults: ITestSuiteResult[];
+}
+
+interface ITestSuiteResult {
+  // Top-level Information
+  name: string;
+  status: "passed" | "failed" | "pending";
+  summary: string;
+
+  // WHAT IS THIS?
+  message: string;
+
+  // Result of Each Test
+  assertionResults: ITestResult[];
+
+  // Time
+  startTime: number;
+  endTime: number;
+}
+
+interface ITestResult {
+  // Top-level Information
+  title: string;
+  ancestorTitles: string[];   // WHAT IS THIS?
+  fullName: string;           // WHAT IS THIS?
+  status: "passed" | "failed" | "pending";
+
+  // WHAT IS THIS?
+  failureMessages: string[];
+  location: null | string;
 }
 
 function getInitialData(options?: JestOptions): JestJobData {
@@ -44,7 +95,7 @@ function getAdditionalDetail(
 
   const result = queryResult.job.data.result;
   return {
-    success: result.every((feature: any) => feature.success),
+    success: result.success,
     result
   };
 }
