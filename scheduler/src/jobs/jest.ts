@@ -4,7 +4,6 @@ import * as fs from "fs";
 import { spawn } from "child_process";
 import { IJobProcessor, JobAttributesExtension, JobQueryResult } from "./index";
 import * as util from "util";
-import { convertSideToJS } from "../libs/selianize";
 import Agenda = require("agenda");
 
 export interface JobAdditionalDetail {
@@ -14,30 +13,30 @@ export interface JobAdditionalDetail {
 
 type Everything = "*";
 
-export interface SelianizeOptions {
+export interface JestOptions {
   project: Everything | string;
 }
 
 /* Additional job data to run radish */
-interface SelianizeJobData {
+interface JestJobData {
   dir: string;
   testName: string;
   result?: any;
 }
 
-function getInitialData(options?: SelianizeOptions): SelianizeJobData {
+function getInitialData(options?: JestOptions): JestJobData {
   let filename = ".";
   if (options) {
     filename = options.project === "*" ? "." : options.project;
   }
   return {
-    dir: path.join(process.cwd(), "./generated-test"),
+    dir: path.join(process.cwd(), "../test-environment"),
     testName: filename
   };
 }
 
 function getAdditionalDetail(
-  queryResult: JobQueryResult<SelianizeJobData & JobAttributesExtension>
+  queryResult: JobQueryResult<JestJobData & JobAttributesExtension>
 ): JobAdditionalDetail {
   if (!queryResult.job.data.result) {
     return { result: [], success: true };
@@ -52,13 +51,11 @@ function getAdditionalDetail(
 
 function defineRadish(agenda: Agenda) {
   agenda.define(
-    "selianize",
+    "jest",
     { concurrency: 1 },
-    async (job: Agenda.Job<SelianizeJobData>, done) => {
+    async (job: Agenda.Job<JestJobData>, done) => {
       try {
-        const { dir, testName } = job.attrs.data;
-
-        await convertSideToJS(dir, testName);
+        const { dir } = job.attrs.data;
 
         console.log("Running jest");
         const child = spawn(

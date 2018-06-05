@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "jest": "^23.1.0",
+    "selenium-webdriver": "https://github.com/GURP-2018S/selenium-webdriver.git"
+  }
+}

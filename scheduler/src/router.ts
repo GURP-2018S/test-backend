@@ -14,15 +14,13 @@ import {
 } from "./jobs";
 import { ObjectId } from "bson";
 import { Db } from "mongodb";
+import { convertSideToJS } from "./libs/selianize";
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
-export default function buildRouter(
-  agenda: Agenda,
-  db: Db,
-  collection: string
-) {
+
+export function buildJobRouter(agenda: Agenda, db: Db, collection: string) {
   Object.entries(processors).map(([_, p]) => p.define(agenda));
 
   const router = Router();
@@ -136,6 +134,28 @@ export default function buildRouter(
   router.put("/:id");
 
   router.delete("/:id");
+
+  router.use((_, res) => {
+    res.status(404).send("Not found");
+  });
+
+  return router;
+}
+
+export function buildConvertRouter() {
+  const router = Router();
+
+  router.use(cors());
+  router.use(bodyParser.json());
+
+  // Convert side to JS
+  router.post("/side/js", async (req, res) => {
+    try {
+      res.contentType("plain/text").send(await convertSideToJS(req.body));
+    } catch (e) {
+      res.status(500).send(e);
+    }
+  });
 
   router.use((_, res) => {
     res.status(404).send("Not found");
