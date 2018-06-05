@@ -66,8 +66,8 @@ interface ITestSuiteResult {
 interface ITestResult {
   // Top-level Information
   title: string;
-  ancestorTitles: string[];   // WHAT IS THIS?
-  fullName: string;           // WHAT IS THIS?
+  ancestorTitles: string[]; // WHAT IS THIS?
+  fullName: string; // WHAT IS THIS?
   status: "passed" | "failed" | "pending";
 
   // WHAT IS THIS?
@@ -120,26 +120,25 @@ function defineRadish(agenda: Agenda) {
           console.log(buffer.toString());
         });
         child.stderr.on("data", data => console.log(`stderr: ${data}`));
-        child.on("close", async () => {
-          const data = await util.promisify(fs.readFile)(
-            path.join(dir, "result.json")
-          );
-          // const json = JSON.parse(data.toString());
+        await new Promise(res => child.on("close", () => res()));
+        const data = await util.promisify(fs.readFile)(
+          path.join(dir, "result.json")
+        );
+        // const json = JSON.parse(data.toString());
 
-          // TODO:: Need to convert Jest Output JSON to own output format somehow
-          // const result = cucumberJsonToResponse(json);
+        // TODO:: Need to convert Jest Output JSON to own output format somehow
+        // const result = cucumberJsonToResponse(json);
 
-          job.attrs.data.result = JSON.parse(data.toString());
-          console.log("job succeed");
+        job.attrs.data.result = JSON.parse(data.toString());
+        console.log("job succeed");
 
-          // if (result.every(feature => feature.success)) {
-          //   console.log("job succeed");
-          // } else{
-          //   job.fail("Some of the features have failed");
-          //   console.log("job failed");
-          // }
-          done();
-        });
+        // if (result.every(feature => feature.success)) {
+        //   console.log("job succeed");
+        // } else{
+        //   job.fail("Some of the features have failed");
+        //   console.log("job failed");
+        // }
+        done();
       } catch (err) {
         console.error(err);
         job.fail(err.message);
