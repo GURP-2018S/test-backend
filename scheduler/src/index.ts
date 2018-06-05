@@ -3,7 +3,7 @@ import express = require("express");
 import { Application } from "express";
 import { MongoClient } from "mongodb";
 
-import buildRouter from "./router";
+import { buildConvertRouter, buildJobRouter } from "./router";
 
 const MONGODB_CONN_SCHEME = process.env.MONGODB_CONN_SCHEME || "mongodb";
 const MONGODB_USER = process.env.MONGODB_USER || "";
@@ -30,7 +30,8 @@ export async function load(settings: ServerSettings) {
 
     const app: Application = express();
     const port: number = Number(process.env.PORT) || 3000;
-    app.use("/jobs", buildRouter(agenda, db, settings.collection));
+    app.use("/jobs", buildJobRouter(agenda, db, settings.collection));
+    app.use('/convert', buildConvertRouter());
     app.listen(port);
   } catch (e) {
     console.error(e);

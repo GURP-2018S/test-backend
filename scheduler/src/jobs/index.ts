@@ -2,7 +2,7 @@ import { ObjectId } from "bson";
 import Agenda = require("agenda");
 
 import radish from "./radish";
-import selianize from "./selianize";
+import jestAgenda from "./jest";
 
 import { JobAttributes } from "agenda";
 
@@ -34,7 +34,7 @@ export interface JobOverview {
   finishedAt?: string;
 }
 
-export type Processors = "radish" | "selianize";
+export type Processors = "radish" | "jest";
 
 export interface IJobProcessor {
   define(agenda: Agenda): void;
@@ -48,7 +48,7 @@ export interface IJobProcessor {
 
 export const processors: Record<Processors, IJobProcessor> = {
   radish,
-  selianize
+  jest: jestAgenda
 };
 
 export interface JobCreation<T extends any = any> {
