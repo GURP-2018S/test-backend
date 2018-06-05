@@ -5,4 +5,8 @@
 # result.json
 features/result.json
 
+test-environment/__test__/*
+test-environment/side/*
+test-environment/result.json
+
 \.DS_Store
