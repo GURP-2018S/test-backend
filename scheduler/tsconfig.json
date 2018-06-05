@@ -21,8 +21,7 @@
     "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {
-      "*": ["./node_modules/*", "./modules/selenium-ide/packages/*"],
-      "selianize/*": ["./modules/selenium-ide/packages/selianize/*"]
+      "*": ["./node_modules/*"]
     },
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true

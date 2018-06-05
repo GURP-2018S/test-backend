@@ -15,7 +15,7 @@ class SeleniumEnvironment extends NodeEnvironment {
     const drivers = [];
     Runner.configuration = {
       capabilities: {
-        browserName: "firefox"
+        browserName: "chrome"
       },
       server: process.env.SELENIUM_URI || "http://localhost:4444/wd/hub",
       path: path.join(__dirname, "./")
