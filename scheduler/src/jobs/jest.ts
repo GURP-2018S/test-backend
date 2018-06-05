@@ -9,8 +9,10 @@ import lodash = require("lodash");
 import {
   extractLineNum,
   getCommandId,
-  getProjectId
+  getProjectId,
+  getTestMap
 } from "../libs/testWatcher";
+import Command = Selianize.Command;
 
 export interface JobAdditionalDetail {
   success: boolean;
@@ -87,6 +89,15 @@ interface ITestResult {
   // WHAT IS THIS?
   failureMessages: string[];
   location: null | string;
+  commands?: ITestCommand[];
+}
+
+interface ITestCommand {
+  id: string;
+  comment: string;
+  command: string;
+  target: string;
+  value: string;
 }
 
 function getInitialData(options?: JestOptions): JestJobData {
@@ -203,9 +214,10 @@ function convertJson(raw: any): ITestJobResult {
       id: projectId,
       suiteResults: suites.map(prevSuite => {
         const { status, summary, message, startTime, endTime } = prevSuite;
+        const suiteName = prevSuite.assertionResults[0].ancestorTitles[0];
 
         return {
-          name: prevSuite.assertionResults[0].ancestorTitles[0],
+          name: suiteName,
           status,
           summary,
           message,
@@ -220,13 +232,26 @@ function convertJson(raw: any): ITestJobResult {
                 location = getCommandId(projectId, lineNum);
               }
             }
+
+            let commands: Command[] = [];
+            const sideContent = getTestMap(projectId).sideContent;
+            if (sideContent) {
+              const sideTest = sideContent.tests.find(
+                sideTest => sideTest.name === test.title
+              );
+              if (sideTest) {
+                commands = sideTest.commands;
+              }
+            }
+
             return {
               title: test.title,
               fullName: test.fullName,
               ancestorTitles: test.ancestorTitles,
               status: test.status,
               failureMessages: test.failureMessages,
-              location
+              location,
+              commands
             };
           })
         };
