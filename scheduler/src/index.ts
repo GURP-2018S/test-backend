@@ -3,9 +3,12 @@ import express = require("express");
 import { Application } from "express";
 import { MongoClient } from "mongodb";
 
-import { buildConvertRouter, buildJobRouter } from "./router";
+import { buildConvertRouter, buildJobRouter, buildSideRouter } from "./router";
 
-import { initialize as initWatcher, terminate as closeWatcher } from "./libs/testWatcher";
+import {
+  initialize as initWatcher,
+  terminate as closeWatcher
+} from "./libs/testWatcher";
 
 const MONGODB_CONN_SCHEME = process.env.MONGODB_CONN_SCHEME || "mongodb";
 const MONGODB_USER = process.env.MONGODB_USER || "";
@@ -35,7 +38,8 @@ export async function load(settings: ServerSettings) {
     const app: Application = express();
     const port: number = Number(process.env.PORT) || 3000;
     app.use("/jobs", buildJobRouter(agenda, db, settings.collection));
-    app.use('/convert', buildConvertRouter());
+    app.use("/convert", buildConvertRouter());
+    app.use("/side", buildSideRouter());
     app.listen(port);
   } catch (e) {
     console.error(e);

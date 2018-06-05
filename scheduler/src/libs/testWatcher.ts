@@ -156,6 +156,10 @@ export function extractLineNum(fileName: string, message: string) {
   return null;
 }
 
+export function getTestMap(projectId: string) {
+  return idToTest[projectId];
+}
+
 export function getProjectId(fileName: string) {
   return testJsToId[fileName] && testJsToId[fileName].id;
 }
