@@ -6,6 +6,11 @@ import { IJobProcessor, JobAttributesExtension, JobQueryResult } from "./index";
 import * as util from "util";
 import Agenda = require("agenda");
 import lodash = require("lodash");
+import {
+  extractLineNum,
+  getCommandId,
+  getProjectId
+} from "../libs/testWatcher";
 
 export interface JobAdditionalDetail {
   success: boolean;
@@ -188,12 +193,14 @@ function convertJson(raw: any): ITestJobResult {
   const projects = Object.entries(
     lodash.groupBy(raw.testResults, suiteResult => suiteResult.name)
   ).map(([fileName, suites]) => {
+    const projectId = getProjectId(fileName);
     return {
       success: suites.every(suite => suite.status === "passed"),
-      startTime: lodash.minBy(suites, suite => suite.startTime).startTime as number,
+      startTime: lodash.minBy(suites, suite => suite.startTime)
+        .startTime as number,
       endTime: lodash.maxBy(suites, suite => suite.endTime).endTime as number,
       fileName,
-      id: "123",
+      id: projectId,
       suiteResults: suites.map(prevSuite => {
         const { status, summary, message, startTime, endTime } = prevSuite;
 
@@ -205,13 +212,21 @@ function convertJson(raw: any): ITestJobResult {
           startTime,
           endTime,
           assertionResults: prevSuite.assertionResults.map((test: any) => {
+            const { failureMessages } = test;
+            let location: string | null = null;
+            if (failureMessages.length > 0) {
+              const lineNum = extractLineNum(fileName, failureMessages[0]);
+              if (lineNum) {
+                location = getCommandId(projectId, lineNum);
+              }
+            }
             return {
               title: test.title,
               fullName: test.fullName,
               ancestorTitles: test.ancestorTitles,
               status: test.status,
               failureMessages: test.failureMessages,
-              location: ""
+              location
             };
           })
         };

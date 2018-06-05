@@ -5,6 +5,8 @@ import { MongoClient } from "mongodb";
 
 import { buildConvertRouter, buildJobRouter } from "./router";
 
+import { initialize as initWatcher, terminate as closeWatcher } from "./libs/testWatcher";
+
 const MONGODB_CONN_SCHEME = process.env.MONGODB_CONN_SCHEME || "mongodb";
 const MONGODB_USER = process.env.MONGODB_USER || "";
 const MONGODB_PASSWD = process.env.MONGODB_PASSWD || "";
@@ -23,6 +25,8 @@ export interface ServerSettings {
 
 export async function load(settings: ServerSettings) {
   try {
+    initWatcher();
+
     client = await MongoClient.connect(settings.mongoURL);
     const db = client.db(settings.database);
 
@@ -60,6 +64,7 @@ agenda.on("ready", () => {
 function graceful() {
   agenda.stop(() => {
     process.exit(0);
+    closeWatcher();
     if (client) {
       client.close();
     }
