@@ -147,7 +147,8 @@ async function loadData(path: string) {
 }
 
 export function extractLineNum(fileName: string, message: string) {
-  const match = new RegExp(`at\\s+.+\\s\\(${fileName}:(\\d+):(\\d+)\\)`).exec(
+  console.log("Extracting file error line %s", fileName);
+  const match = new RegExp(`at\\s+.+\\s\\(.*${fileName}:(\\d+):(\\d+)\\)`).exec(
     message
   );
   if (match) {
@@ -156,7 +157,7 @@ export function extractLineNum(fileName: string, message: string) {
   return null;
 }
 
-export function getTestMap(projectId: string) {
+export function getTestMap(projectId: string): IMapIdToTest | undefined {
   return idToTest[projectId];
 }
 
@@ -171,7 +172,7 @@ export function getCommandId(projectId: string, lineNum: number) {
   }
 
   const cmdIds = (testMap.jsContent || "")
-    .split('\n')
+    .split("\n")
     .slice(0, lineNum)
     .map(line => /^\s*\/\/\s*command_id:\s*([\d\w-]+)\s*$/gm.exec(line))
     .filter(match => match);

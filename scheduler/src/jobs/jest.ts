@@ -2,7 +2,12 @@ import * as path from "path";
 import * as fs from "fs";
 
 import { spawn } from "child_process";
-import { IJobProcessor, JobAttributesExtension, JobQueryResult, runningProcesses } from "./index";
+import {
+  IJobProcessor,
+  JobAttributesExtension,
+  JobQueryResult,
+  runningProcesses
+} from "./index";
 import * as util from "util";
 import Agenda = require("agenda");
 import lodash = require("lodash");
@@ -147,10 +152,9 @@ function defineRadish(agenda: Agenda) {
         });
         child.stderr.on("data", data => console.log(`stderr: ${data}`));
         await new Promise(res => {
-
           child.on("close", () => {
             delete runningProcesses[job.attrs._id.toHexString()];
-            res()
+            res();
           });
         });
 
@@ -161,7 +165,7 @@ function defineRadish(agenda: Agenda) {
           )).toString()
         );
 
-        job.attrs.data.result = convertJson(rawJson);
+        job.attrs.data.result = convertJson(rawJson, dir);
         console.log("Running job finished");
         if (!job.attrs.data.result.success) {
           job.fail("Some tests have failed.");
@@ -177,7 +181,7 @@ function defineRadish(agenda: Agenda) {
   );
 }
 
-function convertJson(raw: any): ITestJobResult {
+function convertJson(raw: any, dir: string): ITestJobResult {
   const {
     numTotalTestSuites,
     numTotalTests,
@@ -213,6 +217,8 @@ function convertJson(raw: any): ITestJobResult {
   const projects = Object.entries(
     lodash.groupBy(raw.testResults, suiteResult => suiteResult.name)
   ).map(([fileName, suites]) => {
+    // Make sure that it is absolute
+    fileName = path.resolve(dir, fileName);
     const projectId = getProjectId(fileName);
     return {
       success: suites.every(suite => suite.status === "passed"),
@@ -236,20 +242,26 @@ function convertJson(raw: any): ITestJobResult {
             const { failureMessages } = test;
             let location: string | null = null;
             if (failureMessages.length > 0) {
-              const lineNum = extractLineNum(fileName, failureMessages[0]);
+              const lineNum = extractLineNum(
+                path.relative(dir, fileName),
+                failureMessages[0]
+              );
               if (lineNum) {
                 location = getCommandId(projectId, lineNum);
               }
             }
 
             let commands: Command[] = [];
-            const sideContent = getTestMap(projectId).sideContent;
-            if (sideContent) {
-              const sideTest = sideContent.tests.find(
-                sideTest => sideTest.name === test.title
-              );
-              if (sideTest) {
-                commands = sideTest.commands;
+            const testMap = getTestMap(projectId);
+            if (testMap) {
+              const sideContent = testMap.sideContent;
+              if (sideContent) {
+                const sideTest = sideContent.tests.find(
+                  sideTest => sideTest.name === test.title
+                );
+                if (sideTest) {
+                  commands = sideTest.commands;
+                }
               }
             }
 
