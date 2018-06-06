@@ -11,7 +11,8 @@ import {
   processors,
   getJobOverview,
   getJobsQuery,
-  ordinarySortQuery
+  ordinarySortQuery,
+  runningProcesses
 } from "./jobs";
 import { ObjectId } from "bson";
 import { Db } from "mongodb";
@@ -147,7 +148,26 @@ export function buildJobRouter(agenda: Agenda, db: Db, collection: string) {
 
   // router.put("/:id");
 
-  router.delete("/:id");
+  router.delete("/:id", (req, res) => {
+    if (!req.params.id) {
+      res.status(404).send("Not found");
+      return;
+    }
+
+    agenda.cancel({ _id: new ObjectId(req.params.id) }, (error, numRemoved) => {
+      const child = runningProcesses[req.params.id];
+      if (child) {
+        child.kill();
+      }
+      if (numRemoved) {
+        res.json({ message: "success" });
+        return;
+      } else if (!numRemoved || error) {
+        res.status(500).json({ message: "failed" });
+        return;
+      }
+    });
+  });
 
   router.use((_, res) => {
     res.status(404).send("Not found");

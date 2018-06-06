@@ -5,6 +5,7 @@ import radish from "./radish";
 import jestAgenda from "./jest";
 
 import { JobAttributes } from "agenda";
+import { ChildProcess } from "child_process";
 
 export type JobId = ObjectId;
 
@@ -67,6 +68,8 @@ export interface JobQueryResult<
   queued: boolean;
   finished: boolean;
 }
+
+export const runningProcesses: Record<string, ChildProcess> = {};
 
 export const ordinarySortQuery = {
   $sort: {
@@ -140,7 +143,7 @@ export function getJobOverview(queryResult: JobQueryResult): JobOverview {
   let state: JobState | undefined;
   if (running) {
     state = "running";
-  } else if (queued && scheduled) {
+  } else if (queued || scheduled) {
     state = "pending";
   } else if (finished) {
     state = "finished";

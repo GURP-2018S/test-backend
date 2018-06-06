@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 
 import { spawn } from "child_process";
-import { IJobProcessor, JobAttributesExtension, JobQueryResult } from "./index";
+import { IJobProcessor, JobAttributesExtension, JobQueryResult, runningProcesses } from "./index";
 import * as util from "util";
 import Agenda = require("agenda");
 import lodash = require("lodash");
@@ -141,11 +141,18 @@ function defineRadish(agenda: Agenda) {
             cwd: dir
           }
         );
+        runningProcesses[job.attrs._id.toHexString()] = child;
         child.stdout.on("data", (buffer: Buffer) => {
           console.log(buffer.toString());
         });
         child.stderr.on("data", data => console.log(`stderr: ${data}`));
-        await new Promise(res => child.on("close", () => res()));
+        await new Promise(res => {
+
+          child.on("close", () => {
+            delete runningProcesses[job.attrs._id.toHexString()];
+            res()
+          });
+        });
 
         // TODO:: Need to convert Jest Output JSON to own output format somehow
         const rawJson = JSON.parse(
