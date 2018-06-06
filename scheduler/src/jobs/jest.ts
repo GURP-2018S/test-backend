@@ -156,7 +156,9 @@ function defineRadish(agenda: Agenda) {
 
         job.attrs.data.result = convertJson(rawJson);
         console.log("Running job finished");
-
+        if (!job.attrs.data.result.success) {
+          job.fail("Some tests have failed.");
+        }
         done();
       } catch (err) {
         console.error(err);

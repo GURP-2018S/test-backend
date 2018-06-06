@@ -49,7 +49,17 @@ export function buildJobRouter(agenda: Agenda, db: Db, collection: string) {
         .toArray();
 
       if (jobData) {
-        res.json(jobData.map(getJobOverview));
+        res.json(
+          jobData.map(queryResult =>
+            Object.assign(
+              {},
+              getJobOverview(queryResult),
+              processors[
+                queryResult.job.name as Processors
+              ].getAdditionalDetail(queryResult)
+            )
+          )
+        );
       } else {
         res.json([]);
       }
@@ -135,7 +145,7 @@ export function buildJobRouter(agenda: Agenda, db: Db, collection: string) {
     }
   });
 
-  router.put("/:id");
+  // router.put("/:id");
 
   router.delete("/:id");
 
