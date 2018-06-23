@@ -35,7 +35,8 @@ services:
       - "3000:3000"
     volumes:
       - ".:/workspace"
-      - /workspace/scheduler/node_modules
+      - scheduler-vol-node_modules:/workspace/scheduler/node_modules
+      - scheduler-vol-test-node_modules:/workspace/test-environment/node_modules
     environment:
       - SELENIUM_URI=http://docker.for.mac.localhost:4444/wd/hub
       - MONGODB_HOST=mongo:27017
@@ -48,4 +49,17 @@ services:
       - "3001:3000"
     volumes:
       - "./test-environment:/home/project:cached"
-    
+
+  filebrowser:
+    image: hacdias/filebrowser
+    command: --database=/fb-config/database.db --config=/fb-config/config.json
+    ports:
+      - "3002:80"
+    volumes:
+      - "./test-environment:/srv"
+      - filebrowser-config:/fb-config
+
+volumes:
+  scheduler-vol-node_modules:
+  scheduler-vol-test-node_modules:
+  filebrowser-config:

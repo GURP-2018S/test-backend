@@ -19,7 +19,7 @@ import { Db } from "mongodb";
 import { convertSideToJS } from "./libs/selianize";
 import * as util from "util";
 import * as fs from "fs";
-import { getTestMap } from "./libs/testWatcher";
+// import { getTestMap } from "./libs/testWatcher";
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -232,18 +232,18 @@ export function buildSideRouter() {
   router.use(cors());
   router.use(bodyParser.json());
 
-  router.get("/:projectId", async (req, res) => {
-    try {
-      const testMap = getTestMap(req.params.projectId);
-      if (testMap) {
-        res.json(testMap.sideContent);
-      } else {
-        res.status(404).json();
-      }
-    } catch (e) {
-      res.status(500).send(e);
-    }
-  });
+  // router.get("/:projectId", async (req, res) => {
+  //   try {
+  //     const testMap = getTestMap(req.params.projectId);
+  //     if (testMap) {
+  //       res.json(testMap.sideContent);
+  //     } else {
+  //       res.status(404).json();
+  //     }
+  //   } catch (e) {
+  //     res.status(500).send(e);
+  //   }
+  // });
 
   router.use((_, res) => {
     res.status(404).send("Not found");

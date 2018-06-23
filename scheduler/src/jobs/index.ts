@@ -9,7 +9,7 @@ import { ChildProcess } from "child_process";
 
 export type JobId = ObjectId;
 
-export type Job = Agenda.Job<JobAttributesExtension>;
+export type Job<T={}> = Agenda.Job<JobAttributesExtension & T>;
 
 export interface JobAttributesExtension extends JobAttributes {
   queuedAt: string;

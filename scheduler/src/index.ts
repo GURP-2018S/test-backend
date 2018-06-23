@@ -4,11 +4,11 @@ import { Application } from "express";
 import { MongoClient } from "mongodb";
 
 import { buildConvertRouter, buildJobRouter, buildSideRouter } from "./router";
-
-import {
-  initialize as initWatcher,
-  terminate as closeWatcher
-} from "./libs/testWatcher";
+//
+// import {
+//   initialize as initWatcher,
+//   terminate as closeWatcher
+// } from "./libs/testWatcher";
 
 const MONGODB_CONN_SCHEME = process.env.MONGODB_CONN_SCHEME || "mongodb";
 const MONGODB_USER = process.env.MONGODB_USER || "";
@@ -28,7 +28,7 @@ export interface ServerSettings {
 
 export async function load(settings: ServerSettings) {
   try {
-    initWatcher();
+    // initWatcher();
 
     client = await MongoClient.connect(settings.mongoURL);
     const db = client.db(settings.database);
@@ -68,7 +68,7 @@ agenda.on("ready", () => {
 function graceful() {
   agenda.stop(() => {
     process.exit(0);
-    closeWatcher();
+    // closeWatcher();
     if (client) {
       client.close();
     }

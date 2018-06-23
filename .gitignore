@@ -5,6 +5,7 @@
 # result.json
 features/result.json
 
+test-environment/test-*
 test-environment/__test__/*
 test-environment/__side__/*
 test-environment/result.json

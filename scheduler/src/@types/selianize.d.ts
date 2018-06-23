@@ -10,6 +10,15 @@ declare namespace Selianize {
     tests: Test[];
     suites: Suite[];
     urls: string[];
+    plugins: string[];
+    version: string;
+    code: SuiteCode[];
+    dependencies: string[]
+  }
+
+  export interface SuiteCode {
+    name: string;
+    code: string;
   }
 
   export interface Suite {

@@ -1,23 +1,22 @@
 import * as path from "path";
-import * as fs from "fs";
+// import * as fs from "fs";
 
 import { spawn } from "child_process";
 import {
   IJobProcessor,
   JobAttributesExtension,
   JobQueryResult,
-  runningProcesses
+  runningProcesses,
+  Job
 } from "./index";
-import * as util from "util";
+// import * as util from "util";
 import Agenda = require("agenda");
-import lodash = require("lodash");
-import {
-  extractLineNum,
-  getCommandId,
-  getProjectId,
-  getTestMap
-} from "../libs/testWatcher";
-import Command = Selianize.Command;
+// import lodash = require("lodash");
+// import {
+//   getProjectId, getTestMap, sideMap
+// } from "../libs/testWatcher";
+// import Command = Selianize.Command;
+import { writeTests } from "../libs/sideManager";
 
 export interface JobAdditionalDetail {
   success: boolean;
@@ -130,18 +129,24 @@ function getAdditionalDetail(
   };
 }
 
-function defineRadish(agenda: Agenda) {
+function defineJest(agenda: Agenda) {
   agenda.define(
     "jest",
     { concurrency: 1 },
-    async (job: Agenda.Job<JestJobData>, done) => {
+    async (job: Job<JestJobData>, done) => {
       try {
-        const { dir } = job.attrs.data;
+        const { dir, queuedAt } = job.attrs.data;
+        const testDir = path.join(dir, "test-" + new Date(queuedAt).getTime());
+        console.log("Generating test files");
+        await writeTests(
+          path.join(dir, "__side__"),
+          testDir
+        );
 
         console.log("Running jest");
         const child = spawn(
           "npx",
-          ["jest", ".", "--json", "--outputFile=result.json"],
+          ["jest", testDir, "--json", "--outputFile=result.json"],
           {
             cwd: dir
           }
@@ -159,17 +164,17 @@ function defineRadish(agenda: Agenda) {
         });
 
         // TODO:: Need to convert Jest Output JSON to own output format somehow
-        const rawJson = JSON.parse(
-          (await util.promisify(fs.readFile)(
-            path.join(dir, "result.json")
-          )).toString()
-        );
+        // const rawJson = JSON.parse(
+        //   (await util.promisify(fs.readFile)(
+        //     path.join(dir, "result.json")
+        //   )).toString()
+        // );
 
-        job.attrs.data.result = convertJson(rawJson, dir);
+        // job.attrs.data.result = convertJson(rawJson, dir);
         console.log("Running job finished");
-        if (!job.attrs.data.result.success) {
-          job.fail("Some tests have failed.");
-        }
+        // if (!job.attrs.data.result.success) {
+        //   job.fail("Some tests have failed.");
+        // }
         done();
       } catch (err) {
         console.error(err);
@@ -181,111 +186,142 @@ function defineRadish(agenda: Agenda) {
   );
 }
 
-function convertJson(raw: any, dir: string): ITestJobResult {
-  const {
-    numTotalTestSuites,
-    numTotalTests,
-    numFailedTestSuites,
-    numFailedTests,
-    numPassedTestSuites,
-    numPassedTests,
-    numPendingTestSuites,
-    numPendingTests,
-    numRuntimeErrorTestSuites,
-    success,
-    wasInterrupted,
-    startTime
-  } = raw;
+// function convertJson(raw: any, dir: string): ITestJobResult {
+//   const {
+//     numTotalTestSuites,
+//     numTotalTests,
+//     numFailedTestSuites,
+//     numFailedTests,
+//     numPassedTestSuites,
+//     numPassedTests,
+//     numPendingTestSuites,
+//     numPendingTests,
+//     numRuntimeErrorTestSuites,
+//     success,
+//     wasInterrupted,
+//     startTime
+//   } = raw;
+//
+//   const result = {
+//     numTotalTestSuites,
+//     numTotalTests,
+//     numFailedTestSuites,
+//     numFailedTests,
+//     numPassedTestSuites,
+//     numPassedTests,
+//     numPendingTestSuites,
+//     numPendingTests,
+//     numRuntimeErrorTestSuites,
+//     success,
+//     wasInterrupted,
+//     startTime,
+//
+//     projectResults: [] as IProjectResult[]
+//   };
+//
+//   const projects = Object.entries(
+//     lodash.groupBy(raw.testResults, suiteResult => suiteResult.name)
+//   ).map(([fileName, suites]) => {
+//     // Make sure that it is absolute
+//     fileName = path.resolve(dir, fileName);
+//     const projectId = getProjectId(fileName);
+//     return {
+//       success: suites.every(suite => suite.status === "passed"),
+//       startTime: lodash.minBy(suites, suite => suite.startTime)
+//         .startTime as number,
+//       endTime: lodash.maxBy(suites, suite => suite.endTime).endTime as number,
+//       fileName,
+//       id: projectId,
+//       suiteResults: suites.map(prevSuite => {
+//         const { status, summary, message, startTime, endTime } = prevSuite;
+//         const suiteName = prevSuite.assertionResults[0].ancestorTitles[0];
+//
+//         return {
+//           name: suiteName,
+//           status,
+//           summary,
+//           message,
+//           startTime,
+//           endTime,
+//           assertionResults: prevSuite.assertionResults.map((test: any) => {
+//             const { failureMessages } = test;
+//             let location: string | null = null;
+//             if (failureMessages.length > 0) {
+//               const lineNum = extractLineNum(
+//                 path.relative(dir, fileName),
+//                 failureMessages[0]
+//               );
+//               if (lineNum) {
+//                 location = getCommandId(projectId, lineNum);
+//               }
+//             }
+//
+//             let commands: Command[] = [];
+//             const testMap = getTestMap(projectId);
+//             if (testMap) {
+//               const sideContent = testMap.sideContent;
+//               if (sideContent) {
+//                 const sideTest = sideContent.tests.find(
+//                   sideTest => sideTest.name === test.title
+//                 );
+//                 if (sideTest) {
+//                   commands = sideTest.commands;
+//                 }
+//               }
+//             }
+//
+//             return {
+//               title: test.title,
+//               fullName: test.fullName,
+//               ancestorTitles: test.ancestorTitles,
+//               status: test.status,
+//               failureMessages: test.failureMessages,
+//               location,
+//               commands
+//             };
+//           })
+//         };
+//       })
+//     };
+//   });
+//
+//   result.projectResults = projects;
+//   return result;
+// }
 
-  const result = {
-    numTotalTestSuites,
-    numTotalTests,
-    numFailedTestSuites,
-    numFailedTests,
-    numPassedTestSuites,
-    numPassedTests,
-    numPendingTestSuites,
-    numPendingTests,
-    numRuntimeErrorTestSuites,
-    success,
-    wasInterrupted,
-    startTime,
-
-    projectResults: [] as IProjectResult[]
-  };
-
-  const projects = Object.entries(
-    lodash.groupBy(raw.testResults, suiteResult => suiteResult.name)
-  ).map(([fileName, suites]) => {
-    // Make sure that it is absolute
-    fileName = path.resolve(dir, fileName);
-    const projectId = getProjectId(fileName);
-    return {
-      success: suites.every(suite => suite.status === "passed"),
-      startTime: lodash.minBy(suites, suite => suite.startTime)
-        .startTime as number,
-      endTime: lodash.maxBy(suites, suite => suite.endTime).endTime as number,
-      fileName,
-      id: projectId,
-      suiteResults: suites.map(prevSuite => {
-        const { status, summary, message, startTime, endTime } = prevSuite;
-        const suiteName = prevSuite.assertionResults[0].ancestorTitles[0];
-
-        return {
-          name: suiteName,
-          status,
-          summary,
-          message,
-          startTime,
-          endTime,
-          assertionResults: prevSuite.assertionResults.map((test: any) => {
-            const { failureMessages } = test;
-            let location: string | null = null;
-            if (failureMessages.length > 0) {
-              const lineNum = extractLineNum(
-                path.relative(dir, fileName),
-                failureMessages[0]
-              );
-              if (lineNum) {
-                location = getCommandId(projectId, lineNum);
-              }
-            }
-
-            let commands: Command[] = [];
-            const testMap = getTestMap(projectId);
-            if (testMap) {
-              const sideContent = testMap.sideContent;
-              if (sideContent) {
-                const sideTest = sideContent.tests.find(
-                  sideTest => sideTest.name === test.title
-                );
-                if (sideTest) {
-                  commands = sideTest.commands;
-                }
-              }
-            }
-
-            return {
-              title: test.title,
-              fullName: test.fullName,
-              ancestorTitles: test.ancestorTitles,
-              status: test.status,
-              failureMessages: test.failureMessages,
-              location,
-              commands
-            };
-          })
-        };
-      })
-    };
-  });
-
-  result.projectResults = projects;
-  return result;
-}
+//
+// function extractLineNum(fileName: string, message: string) {
+//   console.log("Extracting file error line %s", fileName);
+//   const match = new RegExp(`at\\s+.+\\s\\(.*${fileName}:(\\d+):(\\d+)\\)`).exec(
+//     message
+//   );
+//   if (match) {
+//     return Number(match[1]);
+//   }
+//   return null;
+// }
+//
+// function getCommandId(projectFileName: string, suiteName: string, lineNum: number) {
+//   const sideFile = sideMap[projectId];
+//   if (!sideFile) {
+//     return null;
+//   }
+//
+//   const cmdIds = (testMap.jsContent || "")
+//     .split("\n")
+//     .slice(0, lineNum)
+//     .map(line => /^\s*\/\/\s*command_id:\s*([\d\w-]+)\s*$/gm.exec(line))
+//     .filter(match => match);
+//
+//   const last = cmdIds[cmdIds.length - 1];
+//   if (!last) {
+//     return null;
+//   }
+//   return last[1];
+// }
 
 const jobProcessor: IJobProcessor = {
-  define: defineRadish,
+  define: defineJest,
   getInitialData,
   getAdditionalDetail
 };
