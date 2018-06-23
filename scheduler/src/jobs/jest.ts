@@ -145,6 +145,7 @@ function defineJest(agenda: Agenda) {
           fs.unlinkSync(path.join(dir, "result.json"))
         }
         console.log("Running jest");
+        console.log(dir);
         const child = spawn(
           "npx",
           ["jest", testDir, "--json", "--outputFile=result.json"],
