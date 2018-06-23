@@ -51,18 +51,11 @@ services:
     depends_on:
       - mongo
 
-  theia:
-    image: theiaide/theia:next
-    ports:
-      - "3001:3000"
-    volumes:
-      - "./test-environment:/home/project:cached"
-
   filebrowser:
     image: hacdias/filebrowser
     command: --database=/fb-config/database.db --config=/fb-config/config.json
     ports:
-      - "3002:80"
+      - "3001:80"
     volumes:
       - "./test-environment:/srv"
       - filebrowser-config:/fb-config
