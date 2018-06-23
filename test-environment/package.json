@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "jest": "^23.1.0",
+    "jest-environment-selenium": "^1.0.0",
     "selenium-side-runner": "^0.7.0",
     "selenium-webdriver": "https://github.com/GURP-2018S/selenium-webdriver.git"
   },

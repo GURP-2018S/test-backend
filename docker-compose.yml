@@ -27,6 +27,15 @@ services:
     ports:
       - "27017:27017"
 
+  test-environment:
+    build: ./test-environment
+    image: seanahn/gurp-scheduler
+    command: yarn
+    volumes:
+      - ".:/workspace"
+      - scheduler-vol-node_modules:/workspace/scheduler/node_modules
+      - scheduler-vol-test-node_modules:/workspace/test-environment/node_modules
+
   scheduler:
     build: ./scheduler
     image: seanahn/gurp-scheduler

@@ -52,6 +52,7 @@ class SeleniumEnvironment extends NodeEnvironment {
     };
 
     this.global.Runner = Runner;
+    this.global.configuration = {};
   }
 
   async teardown() {

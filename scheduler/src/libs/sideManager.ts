@@ -21,7 +21,6 @@ export function writeTests(sideDir: string, testDir: string) {
         const sideContent = readSide(path.join(sideDir, fileName));
         const projectName = path.basename(fileName, ".side");
         const projectDir = path.join(testDir, projectName);
-        console.log(testDir);
         return mkdir(testDir)
           .then(() => initDirectory(projectDir))
           .then(() =>
@@ -40,7 +39,7 @@ export function writeTests(sideDir: string, testDir: string) {
               })
             );
           })
-          .then(() => sideContent);
+          .then(() => { console.log('Wrote test for', projectName)});
       })
   );
 }
@@ -57,13 +56,6 @@ export function initDirectory(dir: string) {
     const existPromise = access(dir, fs.constants.F_OK);
 
     existPromise
-      .catch(() => {
-        console.log("Created", dir);
-        mkdir(dir);
-      })
-      .then(() => res())
-      .catch(e => rej(e));
-    existPromise
       .then(() =>
         Promise.all(
           fs
@@ -72,6 +64,12 @@ export function initDirectory(dir: string) {
         )
       )
       .then(() => res())
+      .catch(() =>
+        mkdir(dir).then(() => {
+          console.log("Created", dir);
+          res();
+        })
+      )
       .catch(e => rej(e));
   });
 }
