@@ -140,15 +140,15 @@ function defineJest(agenda: Agenda) {
         const testDir = path.join(dir, "test-" + new Date(queuedAt).getTime());
         console.log("Generating test files");
         await writeTests(path.join(dir, "__side__"), testDir);
-
-        if (fs.existsSync(path.join(dir, "result.json"))) {
-          fs.unlinkSync(path.join(dir, "result.json"))
-        }
+        const testResultPath = path.join(testDir, "result.json");
+        // if (fs.existsSync(testResultPath)) {
+        //   fs.unlinkSync(testResultPath)
+        // }
         console.log("Running jest");
         console.log(dir);
         const child = spawn(
           "npx",
-          ["jest", testDir, "--json", "--outputFile=result.json"],
+          ["jest", testDir, "--runInBand", "--json", `--outputFile=${testResultPath}`],
           {
             cwd: dir
           }
@@ -168,7 +168,7 @@ function defineJest(agenda: Agenda) {
         // TODO:: Need to convert Jest Output JSON to own output format somehow
         const rawJson = JSON.parse(
           (await util.promisify(fs.readFile)(
-            path.join(dir, "result.json")
+            testResultPath
           )).toString()
         );
 
@@ -253,7 +253,7 @@ function convertJson(raw: any, dir: string): ITestJobResult {
           endTime,
           name: suiteJsPath
         } = prevSuite;
-        const suiteName = prevSuite.assertionResults[0].ancestorTitles[0];
+        const suiteName = path.basename(suiteJsPath, '.test.js');
         const suiteJsContent = fs.readFileSync(suiteJsPath).toString();
         return {
           name: suiteName,

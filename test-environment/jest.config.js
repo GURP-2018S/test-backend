@@ -2,6 +2,7 @@ const path = require('path');
 
 module.exports = {
   reporters: [ "default" ],
+  setupTestFrameworkScriptFile: require.resolve("jest-environment-selenium/dist/setup.js"),
   testEnvironment: 'jest-environment-selenium',
   testEnvironmentOptions: {
     capabilities: {
